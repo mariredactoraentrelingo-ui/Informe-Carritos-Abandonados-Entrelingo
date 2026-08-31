@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Recuperación de Carritos · Entrelingo</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=DM+Sans:wght@400;500&display=swap');
+:root{--verde:#34c493;--navy:#12304a;--verde-light:#f0faf7;--violeta-light:#f4f4ff;--border:#e8e8f0;--gray-text:#555555;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'DM Sans',sans-serif;background:#f0f2f5;color:#1a1a2e;font-size:14px;}
+.header{background:var(--navy);padding:18px 28px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;}
+.header-left h1{font-family:'Plus Jakarta Sans',sans-serif;font-size:18px;font-weight:800;color:var(--verde);letter-spacing:-0.3px;}
+.header-left p{font-size:12px;color:rgba(255,255,255,0.55);margin-top:2px;}
+.tab-bar{background:#1e3d5c;padding:10px 28px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.chip{padding:6px 16px;border-radius:20px;border:1.5px solid rgba(255,255,255,0.25);background:transparent;color:rgba(255,255,255,0.65);font-size:12.5px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s;}
+.chip:hover{background:rgba(255,255,255,0.1);}
+.chip.active{background:var(--verde);color:var(--navy);border-color:var(--verde);}
+.page{display:none;max-width:1180px;margin:0 auto;padding:22px 24px 48px;}
+.page.active{display:block;}
+.section-label{font-size:11px;font-weight:700;color:#8a8aaa;letter-spacing:.8px;text-transform:uppercase;margin:26px 0 12px;}
+.kpi-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;}
+@media(max-width:900px){.kpi-grid{grid-template-columns:repeat(2,1fr);}}
+.kcard{background:#fff;border-radius:10px;padding:16px;border:1px solid var(--border);border-top:3px solid var(--verde);}
+.klabel{font-size:10px;font-weight:700;color:#9090aa;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px;}
+.kval{font-family:'Plus Jakarta Sans',sans-serif;font-size:24px;font-weight:800;color:var(--navy);line-height:1;}
+.ksub{font-size:11px;color:#9090aa;margin-top:4px;}
+.table-card{background:#fff;border-radius:10px;border:1px solid var(--border);overflow:hidden;margin-top:4px;overflow-x:auto;}
+table{width:100%;border-collapse:collapse;font-size:12px;min-width:640px;}
+thead th{background:var(--navy);color:#fff;padding:10px 12px;text-align:right;font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:11px;white-space:nowrap;}
+thead th:first-child{text-align:left;}
+thead.group-wix th{background:#0a6b3e;}
+thead.group-wp th{background:#1e40af;}
+tbody tr:nth-child(even){background:#fafafa;}
+tbody td{padding:9px 12px;text-align:right;color:var(--gray-text);border-bottom:1px solid #f0f0f8;white-space:nowrap;}
+tbody td:first-child{text-align:left;font-weight:600;color:var(--navy);}
+.revenue-cell{color:#0a6b3e;font-weight:700;}
+.neg-cell{color:#b45309;font-weight:700;}
+.strong-neg-cell{color:#dc2626;font-weight:700;}
+.pend-cell{color:#c99400;font-weight:600;font-style:italic;}
+.na-cell{color:#b0b0c0;}
+.mes-separador{display:flex;align-items:center;gap:12px;margin:22px 0 14px;}
+.mes-separador-line{flex:1;height:2px;background:var(--border);}
+.mes-separador-label{font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;font-weight:800;color:var(--navy);background:var(--verde-light);padding:5px 16px;border-radius:20px;white-space:nowrap;}
+.badge-parcial{background:#fef3c7;color:#92400e;font-size:10px;font-weight:700;padding:2px 8px;border-radius:8px;display:inline-block;margin-left:6px;vertical-align:middle;}
+.best-row{background:#f0faf7 !important;}
+.info-banner{background:#fffbeb;border-left:3px solid #f59e0b;border-radius:6px;padding:12px 16px;font-size:12.5px;color:#78350f;margin-bottom:18px;line-height:1.6;}
+.insight-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px;}
+@media(max-width:900px){.insight-grid{grid-template-columns:1fr;}}
+.insight-card{background:#fff;border-radius:10px;border:1px solid var(--border);padding:20px;}
+.insight-card.positivo{border-left:4px solid #34c493;}
+.insight-card.alerta{border-left:4px solid #f97316;}
+.insight-card.sugerencia{border-left:4px solid #3a7bd5;}
+.insight-card.contexto{border-left:4px solid #7c3aed;}
+.insight-tag{display:inline-block;font-size:10px;font-weight:700;padding:3px 8px;border-radius:8px;margin-bottom:10px;text-transform:uppercase;letter-spacing:.4px;}
+.tag-positivo{background:#d1fae5;color:#065f46;}
+.tag-alerta{background:#ffedd5;color:#9a3412;}
+.tag-sugerencia{background:#dbeafe;color:#1e40af;}
+.tag-contexto{background:#ede9fe;color:#5b21b6;}
+.insight-title{font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;font-weight:700;color:var(--navy);margin-bottom:8px;}
+.insight-body{font-size:13px;color:#4a5568;line-height:1.7;}
+.insight-body strong{color:var(--navy);}
+.insight-body ul{padding-left:18px;margin-top:8px;}
+.insight-body li{margin-bottom:5px;}
+.cupon-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-bottom:6px;}
+@media(max-width:700px){.cupon-grid{grid-template-columns:1fr;}}
+.ccard{background:#fff;border-radius:10px;padding:18px;border:1px solid var(--border);}
+.ctitle{font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;font-weight:700;color:var(--navy);margin-bottom:14px;}
+.cwrap{position:relative;}
+.footer-note{font-size:11px;color:#aaa;text-align:center;margin-top:30px;}
+.stepbox{background:#f8f8fc;border-radius:8px;padding:12px 14px;margin-top:10px;font-size:12.5px;color:#4a5568;}
+.stepbox b{color:var(--navy);}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <h1>Recuperación de Carritos Abandonados · Entrelingo</h1>
+    <p>Wix + WordPress (FunnelKit) · Datos corregidos y consolidados a agosto 2026</p>
+  </div>
+</div>
+
+<div class="tab-bar">
+  <button class="chip active" onclick="switchTab('carritos')" id="tab-carritos">A · Carritos abandonados</button>
+  <button class="chip" onclick="switchTab('metricas')" id="tab-metricas">B · Métricas Wix vs WordPress</button>
+  <button class="chip" onclick="switchTab('estrategia')" id="tab-estrategia">C · Estrategia septiembre</button>
+</div>
+
+<!-- ======================= TAB A: CARRITOS ======================= -->
+<div class="page active" id="page-carritos">
+
+  <div class="section-label">Resumen de recuperación de carrito -- mayo y junio 2026</div>
+  <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:20px">
+    <div class="kcard" style="border-top-color:#12304a"><div class="klabel">Revenue mayo</div><div class="kval" style="color:#12304a">$1.274</div><div class="ksub">9 pedidos recuperados (WP)</div></div>
+    <div class="kcard" style="border-top-color:#16a34a"><div class="klabel">Revenue junio</div><div class="kval" style="color:#16a34a">$4.930</div><div class="ksub">29 pedidos recuperados (WP)</div></div>
+    <div class="kcard" style="border-top-color:#7c3aed"><div class="klabel">Total revenue recuperado</div><div class="kval" style="color:#7c3aed">$6.204</div><div class="ksub">Mayo + junio combinados</div></div>
+    <div class="kcard" style="border-top-color:#34c493"><div class="klabel">Pedidos recuperados</div><div class="kval">38</div><div class="ksub">9 en mayo · 29 en junio</div></div>
+    <div class="kcard" style="border-top-color:#3a7bd5"><div class="klabel">Ticket promedio WP</div><div class="kval">$155,78</div><div class="ksub">Promedio de ambos meses</div></div>
+  </div>
+
+  <div class="mes-separador"><div class="mes-separador-line"></div><div class="mes-separador-label">Julio 2026</div><div class="mes-separador-line"></div></div>
+
+  <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:16px">
+    <div class="kcard" style="border-top-color:#3a7bd5"><div class="klabel">Carritos WP -- en euros</div><div class="kval" style="color:#3a7bd5">€693,75</div><div class="ksub">4 pedidos en EUR</div></div>
+    <div class="kcard" style="border-top-color:#16a34a"><div class="klabel">Carritos WP -- en AUD</div><div class="kval" style="color:#16a34a">$575,04</div><div class="ksub">6 pedidos en AUD + 1 en USD</div></div>
+    <div class="kcard" style="border-top-color:#f97316"><div class="klabel">Carritos WIX -- AUD</div><div class="kval" style="color:#f97316">$1.721,53</div><div class="ksub">18 pedidos hasta 29 jul</div></div>
+    <div class="kcard" style="border-top-color:#7c3aed"><div class="klabel">Total WP + WIX (est. AUD)</div><div class="kval" style="color:#7c3aed">≈$3.625,60</div><div class="ksub">WP aprox. + WIX confirmado</div></div>
+    <div class="kcard" style="border-top-color:#34c493"><div class="klabel">Pedidos recuperados</div><div class="kval">27</div><div class="ksub">9 WP + 18 WIX</div></div>
+  </div>
+
+  <div class="table-card" style="margin-bottom:16px">
+    <table>
+      <thead><tr><th style="text-align:left">Fuente</th><th>Pedidos</th><th>EUR</th><th>AUD</th><th>USD</th><th>Est. AUD total</th></tr></thead>
+      <tbody>
+        <tr><td>WordPress</td><td>9</td><td class="revenue-cell" style="color:#1e40af">€693,75</td><td class="revenue-cell">$575,04</td><td class="revenue-cell">$119,96</td><td class="revenue-cell">≈$1.904,07</td></tr>
+        <tr><td>WIX</td><td>18</td><td class="na-cell">--</td><td class="revenue-cell">$1.721,53</td><td class="na-cell">--</td><td class="revenue-cell">$1.721,53</td></tr>
+        <tr style="background:#f0faf7"><td style="font-weight:800;color:#0a6b3e">TOTAL JULIO</td><td style="font-weight:800">27</td><td class="revenue-cell" style="color:#1e40af;font-weight:800">€693,75</td><td class="revenue-cell" style="font-weight:800">$2.296,57</td><td class="revenue-cell" style="font-weight:800">$119,96</td><td class="revenue-cell" style="font-size:14px;font-weight:800;color:#0a6b3e">≈$3.625,60</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="mes-separador" style="margin-top:28px"><div class="mes-separador-line"></div><div class="mes-separador-label">Agosto 2026</div><div class="mes-separador-line"></div></div>
+
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px">
+    <div class="kcard" style="border-top-color:#3a7bd5"><div class="klabel">WP -- EUR</div><div class="kval" style="color:#3a7bd5">€112,47</div><div class="ksub">2 pedidos</div></div>
+    <div class="kcard" style="border-top-color:#16a34a"><div class="klabel">WP -- AUD</div><div class="kval" style="color:#16a34a">$1.781,81</div><div class="ksub">19 pedidos</div></div>
+    <div class="kcard" style="border-top-color:#f97316"><div class="klabel">WIX -- AUD</div><div class="kval" style="color:#f97316">$1.537,99</div><div class="ksub">16 pedidos</div></div>
+    <div class="kcard" style="border-top-color:#7c3aed"><div class="klabel">Total agosto (cierre)</div><div class="kval" style="color:#7c3aed">≈$3.505,12</div><div class="ksub">37 pedidos (21 WP + 16 WIX)</div></div>
+  </div>
+
+  <div class="table-card" style="margin-bottom:16px">
+    <table>
+      <thead><tr><th style="text-align:left">Fuente</th><th>Pedidos</th><th>EUR</th><th>AUD</th><th>USD</th><th>Est. AUD total</th></tr></thead>
+      <tbody>
+        <tr><td>WordPress</td><td>21</td><td class="revenue-cell" style="color:#1e40af">€112,47</td><td class="revenue-cell">$1.781,81</td><td class="na-cell">--</td><td class="revenue-cell">≈$1.967,13</td></tr>
+        <tr><td>WIX</td><td>16</td><td class="na-cell">--</td><td class="revenue-cell">$1.537,99</td><td class="na-cell">--</td><td class="revenue-cell">$1.537,99</td></tr>
+        <tr style="background:#f0faf7"><td style="font-weight:800;color:#0a6b3e">TOTAL AGOSTO</td><td style="font-weight:800">37</td><td class="revenue-cell" style="color:#1e40af;font-weight:800">€112,47</td><td class="revenue-cell" style="font-weight:800">$3.319,80</td><td class="na-cell">--</td><td class="revenue-cell" style="font-size:14px;font-weight:800;color:#0a6b3e">≈$3.505,12</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="insight-card contexto" style="margin-bottom:20px">
+    <span class="insight-tag tag-contexto">Metodología</span>
+    <div class="insight-title">Cómo se consolida el total cuando hay dos monedas</div>
+    <div class="insight-body">Los montos finales de <strong>agosto</strong> en WordPress fueron <strong>€112,47 en euros y $1.781,81 en dólares australianos</strong> (a diferencia de julio, agosto no tuvo pedidos en USD). Para consolidar en AUD se usa la tasa de referencia <strong>1 EUR = 1,6477 AUD</strong> (agosto 2026), lo que da un total estimado de <strong>≈$1.967,13 AUD</strong> solo para WordPress. Julio sí tuvo un componente adicional en USD (€693,75 EUR + $531,11 AUD + $119,96 USD, usando además 1 USD = 1,55 AUD), por eso su fórmula de conversión tiene un paso más. Los totales marcados con ≈ son estimados por conversión; los confirmados directamente en AUD (como los de Wix) no llevan el símbolo.</div>
+  </div>
+
+  <div class="section-label">Cierre de agosto -- pedidos recuperados</div>
+  <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:20px">
+    <div class="kcard" style="border-top-color:#1e40af"><div class="klabel">WordPress -- pedidos recuperados</div><div class="kval" style="color:#1e40af">21</div><div class="ksub">291 correos enviados · tasa 7,22%</div></div>
+    <div class="kcard" style="border-top-color:#0a6b3e"><div class="klabel">Wix -- pedidos recuperados</div><div class="kval" style="color:#0a6b3e">16</div><div class="ksub">34 correos enviados · tasa 47,06%</div></div>
+  </div>
+
+  <div class="section-label">Comparativa mensual abril-agosto</div>
+  <div class="table-card" style="margin-bottom:16px">
+    <table>
+      <thead><tr><th style="text-align:left">Métrica</th><th>Abril</th><th>Mayo</th><th>Junio</th><th>Julio</th><th>Agosto</th></tr></thead>
+      <tbody>
+        <tr><td>Total correos de recuperación enviados (mes)</td><td>208</td><td>254</td><td>346</td><td>295</td><td>291</td></tr>
+        <tr style="background:#fafafa"><td>Total pedidos recuperados (mes)</td><td>11</td><td>9</td><td class="revenue-cell">29</td><td>9</td><td class="revenue-cell">21</td></tr>
+        <tr><td>Revenue total recuperado ($)</td><td class="revenue-cell">$1.820,00</td><td class="revenue-cell">$1.274,00</td><td class="revenue-cell">$4.930,00</td><td class="revenue-cell">$1.904,07</td><td class="revenue-cell">≈$1.967,13</td></tr>
+        <tr style="background:#fafafa"><td>Tasa de recuperación % (pedidos recup. / correos enviados)</td><td>5,29%</td><td>3,54%</td><td class="revenue-cell">8,38%</td><td>3,05%</td><td class="revenue-cell">7,22%</td></tr>
+        <tr><td>Ticket promedio pedido recuperado ($)</td><td class="revenue-cell">$165,45</td><td class="revenue-cell">$141,56</td><td class="revenue-cell">$170,00</td><td class="revenue-cell">$211,56</td><td class="revenue-cell">$93,67</td></tr>
+        <tr style="background:#fafafa"><td>Revenue recuperado vs. mes anterior ($ diferencia)</td><td class="na-cell">Mes base</td><td class="neg-cell">-$546,00</td><td class="revenue-cell">+$3.656,00</td><td class="neg-cell">-$3.025,93</td><td class="revenue-cell">+$63,06</td></tr>
+        <tr><td>Revenue recuperado vs. mes anterior (% cambio)</td><td class="na-cell">--</td><td class="neg-cell">-30,00%</td><td class="revenue-cell">+286,97%</td><td class="neg-cell">-61,38%</td><td class="revenue-cell">+3,31%</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p class="footer-note">Datos de recuperación de carrito extraídos manualmente de FunnelKit (WordPress) y Wix - Entrelingo Group - Actualización manual mensual</p>
+</div>
+
+<!-- ======================= TAB B: MÉTRICAS ======================= -->
+<div class="page" id="page-metricas">
+
+  <div class="section-label">Wix — mes a mes</div>
+  <div class="table-card" style="margin-bottom:24px">
+    <table>
+      <thead class="group-wix"><tr><th style="text-align:left">KPI</th><th>Marzo</th><th>Abril</th><th>Mayo</th><th>Junio</th><th>Julio</th><th>Agosto</th></tr></thead>
+      <tbody>
+        <tr><td>Correos enviados</td><td class="na-cell">Sin datos</td><td>74</td><td>58</td><td>67</td><td>26</td><td>34</td></tr>
+        <tr style="background:#fafafa"><td>Pedidos recuperados</td><td class="na-cell">--</td><td>33</td><td>25</td><td>20</td><td>18</td><td class="revenue-cell">16</td></tr>
+        <tr><td>Revenue recuperado</td><td class="na-cell">--</td><td class="revenue-cell">$2.348,42</td><td class="revenue-cell">$2.296,17</td><td class="revenue-cell">$2.380,94</td><td class="revenue-cell">$1.721,53</td><td class="revenue-cell">$1.537,99</td></tr>
+        <tr style="background:#fafafa"><td>Tasa de recuperación</td><td class="na-cell">--</td><td>44,59%</td><td>43,10%</td><td>29,85%</td><td class="revenue-cell">69,23%</td><td class="revenue-cell">47,06%</td></tr>
+        <tr><td>Ticket promedio</td><td class="na-cell">--</td><td>$71,16</td><td>$91,85</td><td>$119,05</td><td>$95,64</td><td>$96,12</td></tr>
+        <tr style="background:#fafafa"><td>Revenue vs. mes anterior ($)</td><td class="na-cell">--</td><td class="revenue-cell">+$370,16</td><td class="neg-cell">-$52,25</td><td class="revenue-cell">+$84,77</td><td class="neg-cell">-$659,41</td><td class="neg-cell">-$183,54</td></tr>
+        <tr><td>Revenue vs. mes anterior (%)</td><td class="na-cell">--</td><td class="revenue-cell">+18,71%</td><td class="neg-cell">-2,22%</td><td class="revenue-cell">+3,69%</td><td class="neg-cell">-27,70%</td><td class="neg-cell">-10,66%</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section-label">WordPress — mes a mes (corregido)</div>
+  <div class="table-card" style="margin-bottom:16px">
+    <table>
+      <thead class="group-wp"><tr><th style="text-align:left">KPI</th><th>Marzo</th><th>Abril</th><th>Mayo</th><th>Junio</th><th>Julio</th><th>Agosto</th></tr></thead>
+      <tbody>
+        <tr><td>Correos enviados</td><td>11</td><td>208</td><td>254</td><td>346</td><td>295</td><td>291</td></tr>
+        <tr style="background:#fafafa"><td>Pedidos recuperados</td><td>0</td><td>11</td><td>9</td><td class="revenue-cell">29</td><td>9</td><td class="revenue-cell">21</td></tr>
+        <tr><td>Revenue recuperado</td><td class="na-cell">$0,00</td><td class="revenue-cell">$1.820,00</td><td class="revenue-cell">$1.274,00</td><td class="revenue-cell">$4.930,00</td><td class="revenue-cell">$1.904,07</td><td class="revenue-cell">≈$1.967,13</td></tr>
+        <tr style="background:#fafafa"><td>Tasa de recuperación</td><td>0,00%</td><td>5,29%</td><td>3,54%</td><td>8,38%</td><td>3,05%</td><td class="revenue-cell">7,22%</td></tr>
+        <tr><td>Ticket promedio</td><td class="na-cell">--</td><td>$165,45</td><td>$141,56</td><td>$170,00</td><td>$211,56</td><td>$93,67</td></tr>
+        <tr style="background:#fafafa"><td>Revenue vs. mes anterior ($)</td><td class="na-cell">Mes base</td><td class="revenue-cell">+$1.820,00**</td><td class="neg-cell">-$546,00</td><td class="revenue-cell">+$3.656,00</td><td class="neg-cell">-$3.025,93</td><td class="revenue-cell">+$63,06</td></tr>
+        <tr><td>Revenue vs. mes anterior (%)</td><td class="na-cell">--</td><td class="na-cell">N/A**</td><td class="neg-cell">-30,00%</td><td class="revenue-cell">+286,97%</td><td class="neg-cell">-61,38%</td><td class="revenue-cell">+3,31%</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p style="font-size:11px;color:#9090aa;margin-bottom:24px">**Marzo cerró en $0 (mes de arranque), por lo que el % de variación de abril no es matemáticamente comparable. Agosto ya está cerrado con cifras finales.</p>
+
+  <div class="section-label">Total combinado Wix + WordPress</div>
+  <div class="table-card" style="margin-bottom:24px">
+    <table>
+      <thead><tr><th style="text-align:left">Mes</th><th>Pedidos totales</th><th>Revenue total (AUD)</th></tr></thead>
+      <tbody>
+        <tr><td>Abril</td><td>44</td><td class="revenue-cell">$4.168,42</td></tr>
+        <tr style="background:#fafafa"><td>Mayo</td><td>34</td><td class="revenue-cell">$3.570,17</td></tr>
+        <tr><td>Junio</td><td class="revenue-cell">49</td><td class="revenue-cell">$7.310,94</td></tr>
+        <tr style="background:#fafafa"><td>Julio</td><td>27</td><td class="revenue-cell">≈$3.625,60</td></tr>
+        <tr><td>Agosto</td><td>33</td><td class="revenue-cell">≈$3.265,32</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section-label">Tasa de recuperación por plataforma (%)</div>
+  <div class="ccard" style="margin-bottom:20px">
+    <div class="ctitle">% de correos enviados que terminaron en un pedido recuperado (Wix vs WordPress)</div>
+    <div class="cwrap" style="height:280px"><canvas id="cTasa"></canvas></div>
+  </div>
+
+  <p class="footer-note">Métricas recalculadas a partir de FunnelKit (WordPress), Wix y el histórico corregido de correos enviados - Entrelingo Group</p>
+</div>
+
+<!-- ======================= TAB C: ESTRATEGIA ======================= -->
+<div class="page" id="page-estrategia">
+
+  <div class="section-label">Diagnóstico para septiembre</div>
+  <div class="insight-grid">
+    <div class="insight-card alerta">
+      <span class="insight-tag tag-alerta">Hallazgo principal</span>
+      <div class="insight-title">Hay una gran oportunidad de crecimiento en la conversión de WordPress</div>
+      <div class="insight-body">La tasa de recuperación de WordPress se mueve entre <strong>3% y 8,4%</strong> mes a mes, mientras que Wix tiene un porcentaje de conversión mucho mayor. Hay que tener en cuenta que Wix no es una fuente principal de tráfico, por lo que no le llegan tantos carritos abandonados como a WordPress, así que aunque su tasa sea más alta, el volumen de oportunidades es menor. <strong>El objetivo de septiembre debe ser analizar si hay alguna coincidencia en los meses anteriores sobre los mejores días o semanas en los que las personas suelen recuperar más.</strong> De ser así, hacer pruebas con diferentes correos y asuntos en esos momentos y ver qué resultados se obtienen. <strong>Hay una constante en aumento de ventas comparando marzo con el pico de julio y con el mes recién cerrado, agosto.</strong> Ahora toca seguir mejorando los contenidos para obtener resultados aún mejores.</div>
+    </div>
+    <div class="insight-card positivo">
+      <span class="insight-tag tag-positivo">Tendencia positiva</span>
+      <div class="insight-title">La cantidad de pedidos recuperados en WP sí viene mejorando</div>
+      <div class="insight-body">Viendo el histórico completo: marzo 0, abril 11, mayo 9, junio 29, julio 9, agosto 21 (mes ya cerrado). Hay una tendencia de fondo al alza, aunque no es lineal. El objetivo de septiembre no debería ser solo mantener el revenue constante, sino <strong>aumentar el número de pedidos recuperados de forma sostenida</strong>, no solo en meses puntuales como junio.</div>
+    </div>
+    <div class="insight-card contexto">
+      <span class="insight-tag tag-contexto">Contexto</span>
+      <div class="insight-title">El análisis anterior solo miraba la pestaña de órdenes</div>
+      <div class="insight-body">Las conclusiones previas se basaban únicamente en el revenue y los pedidos recuperados, sin cruzar el total de correos disparados por la automatización. Al revisar la pestaña completa de emails del flujo (no solo las órdenes), aparece un desglose por paso que ayuda a entender <strong>dónde se están perdiendo las conversiones</strong> dentro del propio flujo de WordPress.</div>
+    </div>
+    <div class="insight-card sugerencia">
+      <span class="insight-tag tag-sugerencia">Lectura del flujo paso a paso</span>
+      <div class="insight-title">El correo del medio es el eslabón más débil</div>
+      <div class="insight-body">En el desglose por correo del flujo de WordPress, el segundo correo de la secuencia ("¿Se te olvidó algo importante?") tiene la apertura más baja de los tres, mientras que el tercero (con un gancho más directo y cercano) es el que más convierte y el que más clics genera, a pesar de llegar a menos gente. Esto sugiere que <strong>el asunto del segundo correo no está funcionando</strong> y probablemente esté perdiendo gente antes de llegar al correo que sí convierte bien.</div>
+    </div>
+  </div>
+
+  <div class="section-label">Qué probar en septiembre</div>
+  <div class="insight-grid">
+    <div class="insight-card sugerencia">
+      <span class="insight-tag tag-sugerencia">Asuntos</span>
+      <div class="insight-title">Reescribir el asunto del segundo correo del flujo WP</div>
+      <div class="insight-body">Probar variantes con las fórmulas de marca que ya funcionan en campañas comerciales, del tipo "hemos visto casos de clientes que dejaron esto pendiente" o preguntas directas orientadas al riesgo del trámite, siempre sin alarmismo. El objetivo es subir la apertura de ese paso intermedio, que hoy es el punto donde más gente se cae del flujo.</div>
+      <div class="stepbox">Sugerencia de prueba A/B: <b>"¿Tus documentos ya están listos para tu proceso?"</b> vs. el asunto actual, midiendo apertura durante dos semanas antes de decidir cuál queda fijo.</div>
+    </div>
+    <div class="insight-card sugerencia">
+      <span class="insight-tag tag-sugerencia">Diseño</span>
+      <div class="insight-title">Rediseñar el flujo de WordPress con los componentes ya probados</div>
+      <div class="insight-body">El correo que mejor convierte dentro del flujo WP usa un tono directo y cercano. Vale la pena llevar ese mismo tono a todo el flujo aplicando los componentes de la guía de emails: card verde de borde izquierdo para el gancho principal, botón CTA con "Traducir ahora →", y cierre emocional corto antes del botón, en vez de texto plano.</div>
+      <div class="stepbox">No cambiar los tres correos a la vez: <b>empezar por el segundo</b> (el más débil) y medir su efecto antes de tocar el resto del flujo.</div>
+    </div>
+    <div class="insight-card sugerencia">
+      <span class="insight-tag tag-sugerencia">Timing y segmentación</span>
+      <div class="insight-title">El segundo correo sale demasiado pegado al primero</div>
+      <div class="insight-body">Revisando el flujo de WordPress en FunnelKit: el <strong>correo 1</strong> sale casi de inmediato tras el carrito abandonado. El <strong>correo 2</strong> ("¿Se te olvidó algo importante?", el de peor apertura) sale solo <strong>1 hora</strong> después del primero, prácticamente sin respiro. El <strong>correo 3</strong> (el que mejor convierte) sí tiene un espacio más razonable: sale casi <strong>24 horas</strong> después del segundo, es decir, alrededor de 25 horas después del abandono. Ahí termina la automatización, sin ningún contacto en los días siguientes.</div>
+      <div class="stepbox">Propuesta: mover el correo 2 de 1 hora a un rango de <b>12-24 horas</b> después del primero, para que no llegue el mismo día casi en simultáneo. También vale la pena evaluar sumar un cuarto correo 2-3 días después, ya que hoy el flujo se cierra a la primera jornada y deja de intentar recuperar después de eso.</div>
+    </div>
+  </div>
+
+  <div class="section-label">Meta propuesta para septiembre</div>
+  <div class="insight-card positivo">
+    <span class="insight-tag tag-positivo">Objetivo del mes</span>
+    <div class="insight-title">Aumentar la cantidad de pedidos recuperados en WordPress, no solo el revenue</div>
+    <div class="insight-body">
+      <ul>
+        <li>Agosto cerró con <strong>21 pedidos recuperados</strong> en WordPress y una tasa de recuperación de <strong>7,22%</strong>, dentro del rango que nos habíamos planteado (6-8%). La meta de septiembre es <strong>sostenerla o superarla</strong>, no que sea un pico aislado como pasó en junio.</li>
+        <li>Pasar de 21 pedidos recuperados en WP (agosto) a al menos <strong>25-28 pedidos</strong> en septiembre, manteniendo o subiendo la tasa de recuperación, no solo aumentando el volumen de correos enviados.</li>
+        <li>Aplicar el ajuste de timing en el correo 2 del flujo WP (separarlo más del correo 1) y medir su efecto en la apertura antes de fin de mes.</li>
+      </ul>
+    </div>
+  </div>
+
+  <p class="footer-note">Análisis basado en los datos corregidos de mayo a agosto 2026 y en el desglose por correo del flujo de WordPress - Entrelingo Group</p>
+</div>
+
+<script>
+function switchTab(tab){
+  ['carritos','metricas','estrategia'].forEach(t=>{
+    document.getElementById('tab-'+t).classList.toggle('active',t===tab);
+    document.getElementById('page-'+t).classList.toggle('active',t===tab);
+  });
+  if(tab==='metricas' && !window.__chartDrawn){
+    drawChart();
+    window.__chartDrawn = true;
+  }
+}
+
+function drawChart(){
+  const labels = ['Abril','Mayo','Junio','Julio','Agosto'];
+  const wix = [44.59,43.10,29.85,69.23,47.06];
+  const wp = [5.29,3.54,8.38,3.05,7.22];
+  new Chart(document.getElementById('cTasa'), {
+    type:'bar',
+    data:{
+      labels,
+      datasets:[
+        {label:'Wix', data:wix, backgroundColor:'#0a6b3e', borderRadius:5},
+        {label:'WordPress', data:wp, backgroundColor:'#1e40af', borderRadius:5}
+      ]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{display:true,labels:{font:{size:11},boxWidth:12}}},
+      scales:{
+        y:{ticks:{callback:v=>v+'%'},grid:{color:'#f0f0f8'}},
+        x:{grid:{display:false}}
+      }
+    }
+  });
+}
+</script>
+</body>
+</html>
